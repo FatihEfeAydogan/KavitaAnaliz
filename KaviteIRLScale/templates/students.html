@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Öğrenci Listesi{% endblock %}
+{% block content %}
+<style>
+    .editable-input { background-color: transparent; border: 1px solid transparent; color: inherit; width: 100%; padding: 5px; }
+</style>
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Kayıtlı Öğrenciler</h2>
+    {% if students %}
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead>
+                <tr>
+                    <th>Ad</th>
+                    <th>Soyad</th>
+                    <th>Numara</th>
+                    <th>Referans Görsel</th>
+                    <th style="width: 250px;">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr id="row-{{ s.id }}">
+                    <td><input type="text" class="editable-input" id="ad-{{ s.id }}" value="{{ s.ogrenci_ad }}" disabled></td>
+                    <td><input type="text" class="editable-input" id="soyad-{{ s.id }}" value="{{ s.ogrenci_soyad }}" disabled></td>
+                    <td><input type="text" class="editable-input" id="numara-{{ s.id }}" value="{{ s.ogrenci_no }}" disabled></td>
+                    <td class="text-muted small">{{ s.img_90 }}</td>
+                    <td>
+                        <a href="/result/{{ s.id }}" class="btn btn-primary btn-sm">Sonuçları Gör</a>
+                        <button class="btn btn-warning btn-sm ms-1" onclick="toggleEdit('{{ s.id }}')" id="btn-edit-{{ s.id }}">Düzenle</button>
+                        <button class="btn btn-success btn-sm ms-1 d-none" onclick="saveStudent('{{ s.id }}')" id="btn-save-{{ s.id }}">Kaydet</button>
+                        <button class="btn btn-danger btn-sm ms-1" onclick="deleteStudent('{{ s.id }}')">Sil</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-warning text-center">Kayıtlı öğrenci bulunamadı.</div>
+    {% endif %}
+</div>
+
+<script>
+    function toggleEdit(id) {
+        const ad = document.getElementById(`ad-${id}`), soyad = document.getElementById(`soyad-${id}`), no = document.getElementById(`numara-${id}`);
+        const eBtn = document.getElementById(`btn-edit-${id}`), sBtn = document.getElementById(`btn-save-${id}`);
+        const isDis = ad.disabled;
+        ad.disabled = !isDis; soyad.disabled = !isDis; no.disabled = !isDis;
+        if (isDis) { eBtn.classList.add('d-none'); sBtn.classList.remove('d-none'); ad.focus(); } 
+        else { eBtn.classList.remove('d-none'); sBtn.classList.add('d-none'); }
+    }
+
+    function saveStudent(id) {
+        const data = { ad: document.getElementById(`ad-${id}`).value, soyad: document.getElementById(`soyad-${id}`).value, numara: document.getElementById(`numara-${id}`).value };
+        fetch(`/update_student/${id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })
+        .then(res => res.json()).then(data => { if(data.success){ alert('Güncellendi!'); toggleEdit(id); } });
+    }
+
+    function deleteStudent(id) {
+        if (!confirm("Silmek istediğinize emin misiniz?")) return;
+        fetch(`/delete_student/${id}`, { method: 'POST' })
+        .then(res => res.json()).then(data => { if(data.success){ document.getElementById(`row-${id}`).remove(); } });
+    }
+</script>
+{% endblock %}

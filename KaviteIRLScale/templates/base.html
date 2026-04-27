@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Dijital Kavite Analizi{% endblock %}</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+
+    <style>
+        body { 
+            background: #f7f7f7; 
+        }
+        .navbar-brand { 
+            font-weight: bold; 
+        }
+        footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #777;
+            border-top: 1px solid #ddd;
+        }
+    </style>
+
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" href="/">🦷 Kavite Analiz Sistemi</a>
+
+        <div>
+            <a class="btn btn-light btn-sm fw-bold text-primary" href="/students">Öğrenci Kayıtları</a>
+            <a class="btn btn-warning btn-sm fw-bold ms-2" href="/">+ Yeni Analiz</a>
+        </div>
+    </div>
+</nav>
+
+<div class="container mt-4 mb-4">
+    {% block content %}{% endblock %}
+</div>
+
+<footer>
+    Dijital Kavite Analiz Platformu © 2026 | Bursa Uludağ Üniversitesi
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

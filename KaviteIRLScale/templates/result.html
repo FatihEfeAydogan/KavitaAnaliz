@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Analiz Sonuçları{% endblock %}
+
+{% block content %}
+<style>
+    .zoom-container {
+        overflow: hidden;
+        border-radius: 12px;
+        position: relative;
+        cursor: crosshair;
+        background-color: #f8f9fa;
+        height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .zoom-img {
+        max-width: 100%;
+        max-height: 100%;
+        transition: transform 0.1s ease;
+        transform-origin: center center;
+    }
+    .zoom-container:hover .zoom-img {
+        transform: scale(2.2);
+    }
+    .metric-card {
+        border-top: 4px solid #0d6efd;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="card shadow mb-4 metric-card">
+        <div class="card-body bg-white text-center">
+            <h4 class="text-secondary">Öğrenci: <span class="text-dark">{{ result.ogrenci_ad }} {{ result.ogrenci_soyad }}</span> ({{ result.ogrenci_no }})</h4>
+            
+            {% if result.fatal_error %}
+                <div class="alert alert-danger mt-3 fw-bold fs-5">Kritik Hata (0 Puan): {{ result.fatal_error }}</div>
+                <h2 class="text-danger fw-bold mt-2">Toplam Puan: 0 </h2>
+            {% else %}
+                <h2 class="text-primary fw-bold mt-3">Toplam Puan: {{ result.total_score }} </h2>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8 text-center mb-3">
+            <h5 class="text-muted mb-3"><i class="bi bi-arrows-expand"></i> Kavite Genişlik Analizi (SAM)</h5>
+            {% if result.drawn_90 %}
+                <div class="zoom-container border rounded shadow border-primary">
+                    <img src="{{ url_for('static', filename='uploads/drawn/' + result.drawn_90) }}" class="zoom-img" alt="Genişlik Analizi">
+                </div>
+            {% else %}
+                <p class="text-danger">Genişlik görseli işlenemedi.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header bg-dark text-white fw-bold fs-5">Kavite Metrikleri ve Puan Dağılımı</div>
+        <div class="card-body p-0">
+            <table class="table table-striped table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Değerlendirme Kriteri</th>
+                        <th>Ölçülen Değer</th>
+                        <th class="text-center">Kazanılan Puan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Outline Form (BL / Isthmus Oranı)</td>
+                        <td>{{ "%.2f"|format(result.outline_form) }}</td>
+                        <td class="text-center fw-bold">{{ result.outline_form_score }}</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color: #00FF00;">&#9608;</span> Mesial Isthmus Genişliği</td>
+                        <td>{{ "%.2f mm"|format(result.mesial_isthmus_width) }}</td>
+                        <td class="text-center fw-bold">{{ result.mesial_isthmus_width_score }}</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color: #00FF00;">&#9608;</span> Distal Isthmus Genişliği</td>
+                        <td>{{ "%.2f mm"|format(result.distal_isthmus_width) }}</td>
+                        <td class="text-center fw-bold">{{ result.distal_isthmus_width_score }}</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color: #0000FF;">&#9608;</span> Buccal-Lingual Genişlik</td>
+                        <td>{{ "%.2f mm"|format(result.buccal_lingual_width) }}</td>
+                        <td class="text-center fw-bold">{{ result.buccal_lingual_width_score }}</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color: #FF0000;">&#9608;</span> Mesio-Distal Genişlik</td>
+                        <td>{{ "%.2f mm"|format(result.mesio_distal_width) }}</td>
+                        <td class="text-center fw-bold">{{ result.mesio_distal_width_score }}</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color: #FF00FF;">&#9608;</span> Mesial Marginal Ridge Genişliği</td>
+                        <td>{{ "%.2f mm"|format(result.mesial_marginal_ridge_width) }}</td>
+                        <td class="text-center fw-bold">{{ result.mesial_marginal_ridge_width_score }}</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color: #FF00FF;">&#9608;</span> Distal Marginal Ridge Genişliği</td>
+                        <td>{{ "%.2f mm"|format(result.distal_marginal_ridge_width) }}</td>
+                        <td class="text-center fw-bold">{{ result.distal_marginal_ridge_width_score }}</td>
+                    </tr>
+                    <tr>
+                        <td><span style="color: #000000;">&#9608;</span> Kavite Derinliği (Yapay Zeka Kestirimi)</td>
+                        <td>{{ "%.2f mm"|format(result.depth) }}</td>
+                        <td class="text-center fw-bold">{{ result.depth_score }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if result.stl_file %}
+    <div class="card shadow mb-5 border-info">
+        <div class="card-header bg-info text-white fw-bold fs-5">3D Kavite Modeli (Oluşturulan STL)</div>
+        <div class="card-body p-0 position-relative">
+            <div id="viewer-3d" style="width: 100%; height: 400px; background-color: #e9ecef; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;"></div>
+            
+            <div class="position-absolute top-0 end-0 m-3 z-index-1">
+                <a href="{{ url_for('static', filename='uploads/drawn/' + result.stl_file) }}" class="btn btn-sm btn-dark shadow" download>
+                    <i class="bi bi-download"></i> STL İndir
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="text-center mb-5">
+        <a href="/" class="btn btn-outline-primary px-5 fw-bold mb-5">YENİ ANALİZ BAŞLAT</a>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.zoom-container').forEach(container => {
+        const img = container.querySelector('.zoom-img');
+        container.addEventListener('mousemove', (e) => {
+            const rect = container.getBoundingClientRect();
+            const x = e.clientX - rect.left; 
+            const y = e.clientY - rect.top;  
+            img.style.transformOrigin = `${(x / rect.width) * 100}% ${(y / rect.height) * 100}%`;
+        });
+        container.addEventListener('mouseleave', () => {
+            img.style.transformOrigin = 'center center'; 
+        });
+    });
+</script>
+
+{% if result.stl_file %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script>
+    const container = document.getElementById('viewer-3d');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const ambientLight = new THREE.AmbientLight(0x404040, 1.5); 
+    scene.add(ambientLight);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(1, 1, 1).normalize();
+    scene.add(directionalLight);
+
+    const loader = new THREE.STLLoader();
+    loader.load("{{ url_for('static', filename='uploads/drawn/' + result.stl_file) }}", function (geometry) {
+        const material = new THREE.MeshPhongMaterial({ color: 0xeeddaa, specular: 0x222211, shininess: 60 });
+        const mesh = new THREE.Mesh(geometry, material);
+
+        // STL zaten merkeze hizalı gelir (stl_exporter bounding-box merkezini sıfırlar)
+        // Ek olarak Three.js tarafında da güvence altına alıyoruz
+        geometry.computeBoundingBox();
+        const center = geometry.boundingBox.getCenter(new THREE.Vector3());
+        geometry.translate(-center.x, -center.y, -center.z);
+
+        const size = geometry.boundingBox.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+
+        // Kamera mesafesi
+        camera.position.set(0, -maxDim * 1.8, maxDim * 1.0);
+        camera.lookAt(0, 0, 0);
+
+        // OrbitControls hedefi tam merkez
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        // Oklüzal görünüm: diş yukarıdan görünsün
+        mesh.rotation.x = -Math.PI / 2;
+
+        scene.add(mesh);
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+</script>
+{% endif %}
+{% endblock %}
