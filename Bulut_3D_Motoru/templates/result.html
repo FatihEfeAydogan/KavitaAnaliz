@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}İzole Diş Modeli{% endblock %}
+
+{% block head %}
+<meta charset="UTF-8">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+
+<style>
+    #viewer-container {
+        position: relative; width: 100%; height: 650px; 
+        background: #f0f0f0; border-radius: 8px; overflow: hidden;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.05); border: 1px solid #ddd;
+    }
+    #loading {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        z-index: 5; text-align: center; background: rgba(255,255,255,0.8);
+        padding: 20px; border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<h2 class="text-center mb-4 mt-3">İzole Edilmiş Diş Modeli</h2>
+
+{% if student %}
+<div class="card mb-4 shadow-sm border-0">
+    <div class="card-body py-3 bg-light rounded">
+        <div class="row text-center">
+            <div class="col-md-4"><strong>Ad:</strong> {{ student.studentName }}</div>
+            <div class="col-md-4"><strong>Soyad:</strong> {{ student.studentLastname }}</div>
+            <div class="col-md-4"><strong>Numara:</strong> {{ student.studentNo }}</div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-0">
+        <div id="viewer-container">
+            <div id="viewer" style="width:100%; height:100%;"></div>
+            <div id="loading">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+                <div class="mt-2 small text-muted fw-bold">STL Model Yükleniyor...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const stlUrl = "{{ stl_url }}";
+
+    if (!stlUrl) {
+        document.getElementById("loading").innerHTML = "Model bulunamadı!";
+        return;
+    }
+
+    const viewer = document.getElementById("viewer");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+
+    const camera = new THREE.PerspectiveCamera(45, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    viewer.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Işıklandırma
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(50, 50, 100);
+    scene.add(dirLight);
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    backLight.position.set(-50, -50, -50);
+    scene.add(backLight);
+
+    // STL Yükleme
+    const loader = new THREE.STLLoader();
+    loader.load(stlUrl, function (geometry) {
+        geometry.computeVertexNormals();
+        geometry.center(); // Modeli kameranın merkezine al
+        
+        geometry.computeBoundingBox();
+        const size = geometry.boundingBox.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+
+        const material = new THREE.MeshStandardMaterial({ 
+            color: 0xcccccc, 
+            roughness: 0.5, 
+            metalness: 0.1 
+        });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        scene.add(mesh);
+
+        // Kamerayı modelin boyutuna göre ayarla
+        camera.position.set(0, -maxDim * 1.5, maxDim * 1.2);
+        controls.target.set(0, 0, 0);
+        controls.update();
+
+        document.getElementById("loading").style.display = "none";
+    }, undefined, function (error) {
+        console.error(error);
+        document.getElementById("loading").innerHTML = "STL Yüklenemedi!";
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+        camera.aspect = viewer.clientWidth / viewer.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,688 @@
+{% extends "base.html" %}
+
+{% block title %}Analiz Sonuçları{% endblock %}
+
+{% block head %}
+<meta charset="UTF-8">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/PLYLoader.js"></script>
+
+<style>
+    /* --- ARAYÜZ STİLLERİ --- */
+    
+    /* Sol Panel: Metrik Kontrolleri */
+    .annotation-controls {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        background: rgba(255, 255, 255, 0.96);
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        width: 240px;
+        max-height: 500px;
+        overflow-y: auto;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .annotation-header {
+        font-size: 1rem;
+        font-weight: bold;
+        margin-bottom: 10px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 8px;
+        color: #333;
+    }
+    .metric-item {
+        display: flex;
+        align-items: center;
+        padding: 6px 0;
+        font-size: 0.85rem;
+        border-bottom: 1px solid #f9f9f9;
+    }
+    .metric-item:last-child { border-bottom: none; }
+    
+    .metric-item input {
+        margin-right: 10px;
+        cursor: pointer;
+    }
+    .metric-item label {
+        cursor: pointer;
+        user-select: none;
+        flex-grow: 1;
+    }
+    .color-box {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        margin-right: 8px;
+        flex-shrink: 0;
+    }
+    .no-3d-data {
+        opacity: 0.5;
+        font-style: italic;
+    }
+
+    /* Viewer Alanı */
+    #viewer-container {
+        position: relative; 
+        width: 100%; 
+        height: 650px; 
+        background: #f0f0f0;
+        border-radius: 8px; 
+        overflow: hidden;
+        box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
+        border: 1px solid #ddd;
+    }
+    
+    #loading {
+        position: absolute; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%);
+        z-index: 5;
+        text-align: center;
+        background: rgba(255,255,255,0.8);
+        padding: 20px;
+        border-radius: 10px;
+    }
+
+    #metricLegend {
+        display: none;
+    }
+
+    /* --- TOOLTIP STİLİ --- */
+    #three-tooltip {
+        position: absolute;
+        display: none;
+        background: rgba(0, 0, 0, 0.85);
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        pointer-events: none;
+        z-index: 100;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        border-left: 5px solid #ccc;
+        width: 240px;
+        line-height: 1.4;
+    }
+
+    #three-tooltip strong {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 0.95rem;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        padding-bottom: 3px;
+    }
+    
+    #three-tooltip .tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 2px;
+    }
+
+    #three-tooltip .tooltip-val { font-weight: bold; }
+
+    /* Buton Grubu */
+    .viewer-buttons .btn {
+        font-weight: 500;
+        border-radius: 20px;
+        margin: 0 5px;
+        cursor: default; /* Sadece bilgi amaçlı olduğu için tıklama ikonunu kaldırıyoruz */
+    }
+    
+    /* Tablo Renklendirme Override (Okunabilirlik için) */
+    .table-success { background-color: #d1e7dd !important; }
+    .table-warning { background-color: #fff3cd !important; }
+    .table-danger  { background-color: #f8d7da !important; }
+
+</style>
+{% endblock %}
+
+{% block content %}
+
+<h2 class="text-center mb-4 mt-3">Diş Kavite Analiz Sonuçları</h2>
+
+{% if student %}
+<div class="card mb-4 shadow-sm">
+    <div class="card-body py-3 bg-light">
+        <div class="row text-center">
+            <div class="col-md-3"><strong>Öğrenci ID:</strong> <span class="text-primary">{{ student.studentID }}</span></div>
+            <div class="col-md-3"><strong>Ad:</strong> {{ student.studentName }}</div>
+            <div class="col-md-3"><strong>Soyad:</strong> {{ student.studentLastname }}</div>
+            <div class="col-md-3"><strong>Numara:</strong> {{ student.studentNo }}</div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if student and student.stlFile %}
+<div class="card-header bg-white p-3 border-bottom-0">
+    <div class="d-flex justify-content-center viewer-buttons">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-warning active" id="btnCavity">Kavite Görünümü</button>
+        </div>
+    </div>
+</div>
+    <div class="card-body p-0">
+        <div id="viewer-container">
+            
+            <div id="three-tooltip"></div>
+
+            <div class="annotation-controls" id="annotationPanel" style="display: none;">
+                <div class="annotation-header">Analiz Metrikleri</div>
+                
+                <div class="metric-item pb-2">
+                    <input type="checkbox" id="toggleAll" checked>
+                    <label for="toggleAll" style="font-weight:bold;">Tümünü Göster/Gizle</label>
+                </div>
+                
+                <div id="metricsList"></div>
+            </div>
+
+            <div id="viewer" style="width:100%; height:100%;"></div>
+            
+            <div id="loading">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Yükleniyor...</span>
+                </div>
+                <div class="mt-2 small text-muted fw-bold">3D Model Yükleniyor...</div>
+            </div>
+
+            <div id="metricLegend"></div>
+
+        </div>
+    </div>
+</div>
+
+<script id="landmarks-data" type="application/json">
+    {{ result_metrics.landmarks | tojson | safe if result_metrics.landmarks else '{}' }}
+</script>
+{% endif %}
+
+{% if scores and result_metrics %}
+
+{% if result_metrics.comparison and result_metrics.comparison.FATAL_ERROR %}
+<div class="alert alert-danger shadow border-danger border-2 mt-4 mb-4 p-4" role="alert">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-octagon-fill fs-1 me-3 text-danger"></i>
+        <div>
+            <h4 class="alert-heading fw-bold">DEĞERLENDİRME DIŞI (0 PUAN)</h4>
+            <p class="mb-1 fs-5">Bu çalışma, kritik bir ölçüm hatası nedeniyle başarısız sayılmıştır.</p>
+            <hr>
+            <p class="mb-0 fs-5 fw-bold text-dark">
+                <i class="bi bi-arrow-right-circle-fill me-2"></i>
+                Sebep: {{ result_metrics.comparison.FATAL_ERROR }}
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="card shadow mb-5">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Puanlama Detayları ve Referans Aralıkları</h5>
+        <span class="badge bg-light text-primary fs-6">Toplam 10 Puanlanan Kriter</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle border mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 30%;" class="ps-4">Değerlendirme Kriteri</th>
+                        <th style="width: 15%;">Ölçülen Değer</th>
+                        <th style="width: 40%;">Referans Aralıkları (Puanlama)</th>
+                        <th style="width: 15%;" class="text-center">Puan</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="{% if scores_dict.outline_form_score == 10 %}table-success{% elif scores_dict.outline_form_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Outline Form (BL / Isthmus Ort.)</td>
+                        <td>{{ "%.2f"|format(result_metrics.outline_form) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 1.58 - 2.00</span>
+                            <span class="d-block small"><strong>5p:</strong> 1.40-1.57 veya 2.01-3.50</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.outline_form_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.mesial_isthmus_width_score == 10 %}table-success{% elif scores_dict.mesial_isthmus_width_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Mesial Isthmus Width</td>
+                        <td>{{ "%.2f mm"|format(result_metrics.mesial_isthmus_width) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 1.50 - 1.99 mm</span>
+                            <span class="d-block small"><strong>5p:</strong> 1.00-1.49 veya 2.01-2.50 mm</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.mesial_isthmus_width_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.distal_isthmus_width_score == 10 %}table-success{% elif scores_dict.distal_isthmus_width_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Distal Isthmus Width</td>
+                        <td>{{ "%.2f mm"|format(result_metrics.distal_isthmus_width) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 1.50 - 1.99 mm</span>
+                            <span class="d-block small"><strong>5p:</strong> 1.00-1.49 veya 2.01-2.50 mm</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.distal_isthmus_width_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.buccal_lingual_width_score == 10 %}table-success{% elif scores_dict.buccal_lingual_width_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Buccal-Lingual Width</td>
+                        <td>{{ "%.2f mm"|format(result_metrics.buccal_lingual_width) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 2.70 - 3.30 mm</span>
+                            <span class="d-block small"><strong>5p:</strong> 2.50-2.69 veya 3.31-3.50 mm</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.buccal_lingual_width_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.buccal_lingual_width_rate_score == 10 %}table-success{% elif scores_dict.buccal_lingual_width_rate_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Buccal-Lingual Width Rate</td>
+                        <td>{{ "%.2f"|format(result_metrics.buccal_lingual_width_rate) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 0.35 - 0.45</span>
+                            <span class="d-block small"><strong>5p:</strong> 0.29 - 0.34</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.buccal_lingual_width_rate_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.mesio_distal_width_rate_score == 10 %}table-success{% elif scores_dict.mesio_distal_width_rate_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Mesio-Distal Width Rate</td>
+                        <td>{{ "%.2f"|format(result_metrics.mesio_distal_width_rate) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 0.65 - 0.75</span>
+                            <span class="d-block small"><strong>5p:</strong> 0.60 - 0.649</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.mesio_distal_width_rate_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.mesial_marginal_ridge_width_rate_score == 10 %}table-success{% elif scores_dict.mesial_marginal_ridge_width_rate_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Mesial Marginal Ridge Rate</td>
+                        <td>{{ "%.2f"|format(result_metrics.mesial_marginal_ridge_width_rate) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 0.11 - 0.15</span>
+                            <span class="d-block small"><strong>5p:</strong> 0.09-0.109 veya 0.151-0.18</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.mesial_marginal_ridge_width_rate_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.distal_marginal_ridge_width_rate_score == 10 %}table-success{% elif scores_dict.distal_marginal_ridge_width_rate_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Distal Marginal Ridge Rate</td>
+                        <td>{{ "%.2f"|format(result_metrics.distal_marginal_ridge_width_rate) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 0.11 - 0.15</span>
+                            <span class="d-block small"><strong>5p:</strong> 0.09-0.109 veya 0.151-0.18</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.distal_marginal_ridge_width_rate_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.cavity_depth_score == 10 %}table-success{% elif scores_dict.cavity_depth_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Cavity Depth</td>
+                        <td>{{ "%.2f mm"|format(result_metrics.cavity_depth) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 2.50 - 3.00 mm</span>
+                            <span class="d-block small"><strong>5p:</strong> 2.00-2.49 veya 3.01-3.49 mm</span>
+                            <span class="d-block small text-danger"><strong>Kritik:</strong> > 3.50 mm</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.cavity_depth_score }}</td>
+                    </tr>
+
+                    <tr class="{% if scores_dict.smoothness_score == 10 %}table-success{% elif scores_dict.smoothness_score == 5 %}table-warning{% else %}table-danger{% endif %}">
+                        <td class="ps-4">Smoothness</td>
+                        <td>{{ "%.2f"|format(result_metrics.smoothness) }}</td>
+                        <td>
+                            <span class="d-block"><strong>10p:</strong> 0 - 10.00</span>
+                            <span class="d-block small"><strong>5p:</strong> 10.01 - 40.00</span>
+                        </td>
+                        <td class="text-center fw-bold fs-5">{{ scores_dict.smoothness_score }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex justify-content-end bg-light p-4 border-top">
+            <div class="text-end">
+                {% if result_metrics.comparison and result_metrics.comparison.FATAL_ERROR %}
+                    <h2 class="text-danger fw-bold mb-0">Başarı Puanı: 0.00 / 100</h2>
+                    <small class="text-danger d-block mt-1">Kritik Hata: {{ result_metrics.comparison.FATAL_ERROR }}</small>
+                {% else %}
+                    <h2 class="text-primary fw-bold mb-0">Başarı Puanı: {{ final_score|round(2) }} / 100</h2>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const studentSTLPath = "{% if student_stl_path %}{{ url_for('static', filename=student_stl_path) }}{% else %}{{ url_for('static', filename=student.stlFile) }}{% endif %}";
+    const coloredMeshPath = "{% if colored_mesh_path %}{{ url_for('static', filename=colored_mesh_path) }}{% endif %}";
+    
+    let landmarksData = {};
+    const dataScript = document.getElementById('landmarks-data');
+    if (dataScript && dataScript.textContent) {
+        try {
+            landmarksData = JSON.parse(dataScript.textContent);
+        } catch (e) {
+            console.error("JSON Parsing Hatası:", e);
+        }
+    }
+
+    const metricDetails = {
+        "mesial_isthmus_width": {
+            value: "{{ '%.2f'|format(result_metrics.mesial_isthmus_width) }} mm",
+            score: Number("{{ scores_dict.mesial_isthmus_width_score }}"),
+            range: "10p: 1.50-1.99 | 5p: 1.00-1.49, 2.01-2.50"
+        },
+        "distal_isthmus_width": {
+            value: "{{ '%.2f'|format(result_metrics.distal_isthmus_width) }} mm",
+            score: Number("{{ scores_dict.distal_isthmus_width_score }}"),
+            range: "10p: 1.50-1.99 | 5p: 1.00-1.49, 2.01-2.50"
+        },
+        "buccal_lingual_width": {
+            value: "{{ '%.2f'|format(result_metrics.buccal_lingual_width) }} mm",
+            score: Number("{{ scores_dict.buccal_lingual_width_score }}"),
+            range: "10p: 2.70-3.30 | 5p: 2.50-2.69, 3.31-3.50"
+        },
+        "cavity_depth": {
+            value: "{{ '%.2f'|format(result_metrics.cavity_depth) }} mm",
+            score: Number("{{ scores_dict.cavity_depth_score }}"),
+            range: "10p: 2.50-3.00 | 5p: 2.00-2.49, 3.01-3.49"
+        },
+        "mesio_distal_width": {
+            value: "{{ '%.2f'|format(result_metrics.mesio_distal_width) }} mm",
+            score: 0,
+            range: "Puanlama dışı bilgi metriği"
+        },
+        "mesial_marginal_ridge_width": {
+            value: "{{ '%.2f'|format(result_metrics.mesial_marginal_ridge_width) }} mm",
+            score: 0,
+            range: "Puanlama dışı bilgi metriği"
+        },
+        "distal_marginal_ridge_width": {
+            value: "{{ '%.2f'|format(result_metrics.distal_marginal_ridge_width) }} mm",
+            score: 0,
+            range: "Puanlama dışı bilgi metriği"
+        }
+    };
+
+    const allMetricsConfig = [
+        { key: "outline_form", label: "1. Outline Form", has3D: false, color: "#999" },
+        { key: "mesial_isthmus_width", label: "2. Mesial Isthmus", has3D: true, color: "#ff8800" },
+        { key: "distal_isthmus_width", label: "3. Distal Isthmus", has3D: true, color: "#ff8800" },
+        { key: "buccal_lingual_width", label: "4. Buccal-Lingual W.", has3D: true, color: "#0000ff" },
+        { key: "buccal_lingual_width_rate", label: "5. Buccal-Lingual Rate", has3D: false, color: "#999" },
+        { key: "mesio_distal_width", label: "6. Mesio-Distal W.", has3D: true, color: "#ff0000" },
+        { key: "mesio_distal_width_rate", label: "7. Mesio-Distal Rate", has3D: false, color: "#999" },
+        { key: "mesial_marginal_ridge_width", label: "8. Mesial Ridge W.", has3D: true, color: "#800080" }, 
+        { key: "mesial_marginal_ridge_width_rate", label: "9. Mesial Ridge Rate", has3D: false, color: "#999" },
+        { key: "distal_marginal_ridge_width", label: "10. Distal Ridge W.", has3D: true, color: "#800080" }, 
+        { key: "distal_marginal_ridge_width_rate", label: "11. Distal Ridge Rate", has3D: false, color: "#999" },
+        { key: "cavity_depth", label: "12. Cavity Depth", has3D: true, color: "#00aa00" },
+        { key: "smoothness", label: "13. Smoothness", has3D: false, color: "#999" }
+    ];
+
+    const viewer = document.getElementById("viewer");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xf0f0f0);
+
+    const camera = new THREE.PerspectiveCamera(45, viewer.clientWidth / viewer.clientHeight, 0.1, 1000);
+    camera.position.set(0, -30, 40);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    viewer.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    dirLight.position.set(50, 50, 100);
+    scene.add(dirLight);
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    backLight.position.set(-50, -50, -50);
+    scene.add(backLight);
+
+    let studentMesh = null;
+    let coloredStudentMesh = null;
+    let studentBoundingBox = null; 
+    const annotationGroup = new THREE.Group();
+    scene.add(annotationGroup);
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+    const tooltip = document.getElementById("three-tooltip");
+
+    viewer.addEventListener('mousemove', onMouseMove, false);
+
+    function onMouseMove(event) {
+        const rect = viewer.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        const tooltipX = event.clientX - rect.left + 15;
+        const tooltipY = event.clientY - rect.top + 15;
+        tooltip.style.left = tooltipX + 'px';
+        tooltip.style.top = tooltipY + 'px';
+
+        checkIntersection();
+    }
+
+    function checkIntersection() {
+        if (!annotationGroup.visible) {
+            tooltip.style.display = 'none';
+            return;
+        }
+
+        raycaster.setFromCamera(mouse, camera);
+        const intersects = raycaster.intersectObjects(annotationGroup.children, true);
+
+        if (intersects.length > 0) {
+            const object = intersects[0].object;
+            let key = object.name;
+            if (key.endsWith("_start")) key = key.replace("_start", "");
+            if (key.endsWith("_end")) key = key.replace("_end", "");
+
+            const info = metricDetails[key];
+
+            if (info) {
+                let colorClass = '#dc3545'; 
+                let borderClass = '5px solid #dc3545';
+                
+                if (info.score === 10) {
+                    colorClass = '#28a745'; 
+                    borderClass = '5px solid #28a745';
+                } else if (info.score === 5) {
+                    colorClass = '#ffc107'; 
+                    borderClass = '5px solid #ffc107';
+                } else if (info.range.includes("Puanlama dışı")) {
+                    colorClass = '#17a2b8'; 
+                    borderClass = '5px solid #17a2b8';
+                }
+
+                tooltip.style.borderLeft = borderClass;
+                tooltip.innerHTML = `
+                    <strong style="color:${colorClass}">${allMetricsConfig.find(m => m.key === key)?.label || key}</strong>
+                    <div class="tooltip-row"><span>Ölçüm:</span> <span class="tooltip-val">${info.value}</span></div>
+                    <div class="tooltip-row"><span>Puan:</span> <span class="tooltip-val" style="color:${colorClass}">${info.score} Puan</span></div>
+                    <div style="margin-top:5px; font-size:0.75rem; color:#ccc;">${info.range}</div>
+                `;
+                tooltip.style.display = 'block';
+            }
+        } else {
+            tooltip.style.display = 'none';
+        }
+    }
+
+    function addAnnotationLine(key, colorHex) {
+        const data = landmarksData[key];
+        if (!data || !data.start || !data.end) return false;
+
+        const start = new THREE.Vector3(data.start[0], data.start[1], data.start[2]);
+        const end = new THREE.Vector3(data.end[0], data.end[1], data.end[2]);
+        const color = new THREE.Color(colorHex);
+
+        const distance = start.distanceTo(end);
+        const mid = new THREE.Vector3().addVectors(start, end).multiplyScalar(0.5);
+        
+        const geometry = new THREE.CylinderGeometry(0.08, 0.08, distance, 8);
+        geometry.rotateX(Math.PI / 2);
+        const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5, metalness: 0.1 });
+        const cylinder = new THREE.Mesh(geometry, material);
+        cylinder.position.copy(mid);
+        cylinder.lookAt(end); 
+        cylinder.name = key;
+        annotationGroup.add(cylinder);
+        addLandmarkPoints(start, end, colorHex, key);
+        return true;
+    }
+
+    function addLandmarkPoints(start, end, colorHex, key) {
+        const color = new THREE.Color(colorHex);
+        const geometry = new THREE.SphereGeometry(0.18, 16, 16);
+        const material = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
+        const startPoint = new THREE.Mesh(geometry, material);
+        startPoint.position.copy(start);
+        startPoint.name = `${key}_start`;
+        annotationGroup.add(startPoint);
+        const endPoint = new THREE.Mesh(geometry, material);
+        endPoint.position.copy(end);
+        endPoint.name = `${key}_end`;
+        annotationGroup.add(endPoint);
+    }
+
+    function getColorForMetric(key) {
+        const colorMap = {
+            "mesial_isthmus_width": "#ff8800",
+            "distal_isthmus_width": "#ff8800",
+            "buccal_lingual_width": "#0000ff", 
+            "cavity_depth": "#00aa00",
+            "mesio_distal_width": "#ff0000",
+            "mesial_marginal_ridge_width": "#800080",
+            "distal_marginal_ridge_width": "#800080"
+        };
+        return colorMap[key] || "#888888";
+    }
+
+    function setupCameraForMeshAndLandmarks() {
+        let targetBox = studentBoundingBox; 
+        if (!targetBox && studentMesh) {
+             targetBox = new THREE.Box3().setFromObject(studentMesh);
+        }
+        if (!targetBox) return;
+
+        const center = targetBox.getCenter(new THREE.Vector3());
+        const size = targetBox.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        
+        camera.position.set(center.x, center.y - maxDim * 1.5, center.z + maxDim * 0.8);
+        controls.target.copy(center);
+        controls.update();
+    }
+
+    const metricsList = document.getElementById("metricsList");
+    allMetricsConfig.forEach(metric => {
+        let hasLine = false;
+        if (metric.has3D) { hasLine = addAnnotationLine(metric.key, getColorForMetric(metric.key)); }
+        const div = document.createElement("div");
+        div.className = "metric-item";
+        const extraClass = (!hasLine && metric.has3D) ? "no-3d-data" : ""; 
+        const dotColor = (metric.has3D && hasLine) ? getColorForMetric(metric.key) : "#ccc";
+        div.innerHTML = `
+            <input type="checkbox" id="cb_${metric.key}" value="${metric.key}" checked ${!hasLine ? 'disabled' : ''}>
+            <span class="color-box" style="background-color:${dotColor};"></span>
+            <label for="cb_${metric.key}" class="${extraClass}">${metric.label}</label>
+        `;
+        metricsList.appendChild(div);
+        const checkbox = div.querySelector("input");
+        if (!hasLine) { checkbox.checked = false; } else {
+            checkbox.addEventListener("change", function(e) {
+                const targetKey = e.target.value;
+                const isChecked = e.target.checked;
+                annotationGroup.children.forEach(child => {
+                    if (child.name === targetKey || child.name.includes(targetKey)) { child.visible = isChecked; }
+                });
+            });
+        }
+    });
+
+    document.getElementById("toggleAll").addEventListener("change", function(e) {
+        const isChecked = e.target.checked;
+        annotationGroup.visible = isChecked;
+        document.querySelectorAll("#metricsList input[type='checkbox']").forEach(cb => {
+            if (!cb.disabled) cb.checked = isChecked;
+        });
+    });
+
+    const loader = new THREE.STLLoader();
+    const plyLoader = new THREE.PLYLoader();
+    let modelsLoaded = 0;
+
+    function checkAllModelsLoaded() {
+        modelsLoaded++;
+        if (modelsLoaded >= 1) { 
+            document.getElementById("loading").style.display = "none";
+            loadColoredMeshes();
+            setupCameraForMeshAndLandmarks();
+            
+            // Panelleri doğrudan gösteriyoruz
+            document.getElementById("annotationPanel").style.display = "block";
+            document.getElementById("metricLegend").style.display = "block";
+            annotationGroup.visible = document.getElementById("toggleAll").checked;
+        }
+    }
+
+    // Ana geometriyi yükleme (Kamerayı ayarlamak ve bounding box'ı almak için STL'i arka planda yüklüyoruz ama gizli tutuyoruz)
+    loader.load(studentSTLPath, function (geometry) {
+        geometry.computeVertexNormals();
+        geometry.computeBoundingBox(); 
+        studentBoundingBox = geometry.boundingBox; 
+
+        const material = new THREE.MeshStandardMaterial({ color: 0x007bff, roughness: 0.6, side: THREE.DoubleSide });
+        studentMesh = new THREE.Mesh(geometry, material);
+        studentMesh.visible = false; // Temel STL görünmez
+        scene.add(studentMesh);
+        checkAllModelsLoaded();
+    }, undefined, function() {
+        document.getElementById("loading").innerHTML = "Öğrenci modeli yüklenemedi!";
+    });
+
+    // Kavite görünümünü yükleme (Ana görünüm)
+    function loadColoredMeshes() {
+        if (coloredMeshPath) {
+            plyLoader.load(coloredMeshPath, function(geometry) {
+                geometry.computeVertexNormals();
+                const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, metalness: 0.2, side: THREE.DoubleSide });
+                coloredStudentMesh = new THREE.Mesh(geometry, material);
+                coloredStudentMesh.visible = true; // Sadece Kavite Görünümü görünür!
+                scene.add(coloredStudentMesh);
+            });
+        }
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener("resize", () => {
+        camera.aspect = viewer.clientWidth / viewer.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    });
+});
+</script>
+
+{% endblock %}

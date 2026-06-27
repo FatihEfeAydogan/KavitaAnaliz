@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}Kavite Analizi{% endblock %}
+
+{% block content %}
+<style>
+  :root {
+    --blue: #1a56db;
+    --blue-light: #e8f0fe;
+    --green: #0e9f6e;
+    --red: #f05252;
+    --orange: #f97316;
+    --gray: #6b7280;
+    --border: #e5e7eb;
+    --radius: 12px;
+  }
+
+  .page-title { font-size: 1.4rem; font-weight: 700; color: #111827; margin-bottom: 4px; }
+  .page-sub { font-size: 0.85rem; color: var(--gray); margin-bottom: 28px; }
+
+  .card {
+    background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  }
+  .card-title { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--gray); margin-bottom: 14px; }
+
+  .form-row { display: flex; gap: 12px; margin-bottom: 14px; }
+  .form-row > * { flex: 1; }
+  label { display: block; font-size: 0.82rem; font-weight: 500; color: #374151; margin-bottom: 5px; }
+  input[type="text"] {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 0.9rem; outline: none; box-sizing: border-box; transition: border-color .15s;
+  }
+  input[type="text"]:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+
+  .alert-panel { background: #fff4e5; border-left: 5px solid #ffa117; padding: 15px; margin-bottom: 25px; border-radius: 8px; font-size: 0.9rem;}
+
+  .upload-zone { border: 2px dashed #d1d5db; border-radius: 10px; padding: 32px 20px; text-align: center; cursor: pointer; transition: 0.2s; position: relative; background:#fff;}
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--blue); background: var(--blue-light); }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-icon { font-size: 2rem; margin-bottom: 8px; }
+
+  #canvas-container { display: none; margin-top: 15px; border: 2px solid var(--border); border-radius: 10px; padding: 10px; background: #f9fafb; user-select: none; }
+  canvas { max-width: 100%; cursor: crosshair; border-radius: 8px; border: 1px solid #ddd; display:block; margin:auto; }
+
+  .submit-btn { width: 100%; padding: 14px; background: var(--blue); color: #fff; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .submit-btn:hover:not(:disabled) { background: #1648c4; }
+  .submit-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+
+<div class="container" style="max-width:900px; margin:0 auto; padding: 20px 16px;">
+  <div class="page-title">Kavite Değerlendirme Sistemi</div>
+  <div class="page-sub">Analiz edilecek fotoğrafı yükleyip hedef dişi işaretleyin.</div>
+
+  <div class="alert-panel">
+    <strong>💡 Nasıl Kullanılır?</strong><br>
+    Analiz edilecek damak fotoğrafını yükledikten sonra, <b style="color:red;">fareyi basılı tutarak dişin etrafına bir KARE çizin.</b> Sistem yapay zeka ile dişi ve kaviteyi o alanda arayacaktır.
+  </div>
+
+  <form action="/process" method="POST" enctype="multipart/form-data" id="main-form">
+
+    <div class="card">
+      <div class="card-title">Öğrenci Bilgileri</div>
+      <div class="form-row">
+        <div><label>Ad</label><input type="text" name="student_name" required placeholder="Adınız"></div>
+        <div><label>Soyad</label><input type="text" name="student_lastname" required placeholder="Soyadınız"></div>
+      </div>
+      <div><label>Öğrenci Numarası</label><input type="text" name="student_no" required placeholder="2024XXXXXXX"></div>
+    </div>
+
+    <div class="card" id="upload-card">
+      <div class="card-title">Fotoğraf Yükleme Alanı</div>
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" name="img_90" id="file-input" accept="image/*" required>
+        <div class="upload-icon">📸</div>
+        <div id="upload-text-info" style="font-size: 0.88rem; color: var(--gray);">
+          <span style="color: var(--blue); font-weight: 600;">Dosya seçin</span> veya sürükleyip bırakın
+        </div>
+      </div>
+
+      <div id="canvas-container" class="text-center">
+        <p style="color: var(--blue); font-size: 0.85rem; font-weight:600; margin-bottom: 8px;">
+          Farenin tuşuna basılı tutarak hedef dişi bir <b style="color:red;">KARE</b> içine alın:
+        </p>
+        <canvas id="selection-canvas"></canvas>
+      </div>
+    </div>
+
+    <input type="hidden" name="box_x1" id="box_x1">
+    <input type="hidden" name="box_y1" id="box_y1">
+    <input type="hidden" name="box_x2" id="box_x2">
+    <input type="hidden" name="box_y2" id="box_y2">
+
+    <button type="submit" class="submit-btn" id="submit-btn" disabled>
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      Analizi Başlat
+    </button>
+  </form>
+</div>
+
+<script>
+let loadedImg     = new Image();
+let toothBoxReady = false;
+
+const selCanvas = document.getElementById('selection-canvas');
+const selCtx    = selCanvas.getContext('2d');
+const fileInput  = document.getElementById('file-input');
+const uploadZone = document.getElementById('upload-zone');
+const uploadText = document.getElementById('upload-text-info');
+const submitBtn  = document.getElementById('submit-btn');
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) { fileInput.files = e.dataTransfer.files; handleFile(e.dataTransfer.files[0]); }
+});
+fileInput.addEventListener('change', () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+function handleFile(file) {
+  uploadText.innerHTML = `<span style="color:var(--green);font-weight:600;">${file.name}</span> seçildi.`;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    loadedImg.onload = () => {
+      const maxW = uploadZone.clientWidth || 600;
+      const ratio = Math.min(1, maxW / loadedImg.width);
+      selCanvas.width  = loadedImg.width  * ratio;
+      selCanvas.height = loadedImg.height * ratio;
+      document.getElementById('canvas-container').style.display = 'block';
+      
+      ['box_x1','box_y1','box_x2','box_y2'].forEach(id => document.getElementById(id).value = '');
+      toothBoxReady = false;
+      submitBtn.disabled = true;
+      drawSelCanvas();
+    };
+    loadedImg.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function drawSelCanvas() {
+  selCtx.clearRect(0, 0, selCanvas.width, selCanvas.height);
+  selCtx.drawImage(loadedImg, 0, 0, selCanvas.width, selCanvas.height);
+}
+
+let selDrawing = false, selStartX, selStartY, selRectW, selRectH;
+
+selCanvas.addEventListener('mousedown', e => {
+  selDrawing = true;
+  const r = selCanvas.getBoundingClientRect();
+  selStartX = e.clientX - r.left;
+  selStartY = e.clientY - r.top;
+});
+
+
+selCanvas.addEventListener('mousemove', e => {
+  if (!selDrawing) return;
+  const r = selCanvas.getBoundingClientRect();
+  let dx = (e.clientX - r.left) - selStartX;
+  let dy = (e.clientY - r.top)  - selStartY;
+  let sz = Math.max(Math.abs(dx), Math.abs(dy));
+  selRectW = dx < 0 ? -sz : sz;
+  selRectH = dy < 0 ? -sz : sz;
+
+  drawSelCanvas();
+  
+  // 1. Kırmızı Kutuyu Çiz
+  selCtx.beginPath();
+  selCtx.rect(selStartX, selStartY, selRectW, selRectH);
+  selCtx.lineWidth = 3; selCtx.strokeStyle = 'red';
+  selCtx.stroke();
+  selCtx.fillStyle = 'rgba(255,0,0,0.15)';
+  selCtx.fill();
+
+  // 2. Kutunun Merkezini Hesapla
+  let centerX = selStartX + (selRectW / 2);
+  let centerY = selStartY + (selRectH / 2);
+
+  // 3. Merkeze Sarı Nokta (Target/Nişangah) Çiz
+  selCtx.beginPath();
+  selCtx.arc(centerX, centerY, 5, 0, 2 * Math.PI); // 5 piksel yarıçaplı yuvarlak
+  selCtx.fillStyle = 'yellow';
+  selCtx.fill();
+  selCtx.lineWidth = 2;
+  selCtx.strokeStyle = 'black'; // Daha iyi görünmesi için siyah dış çizgi
+  selCtx.stroke();
+});
+
+selCanvas.addEventListener('mouseup', e => {
+  if (!selDrawing) return;
+  selDrawing = false;
+  if (Math.abs(selRectW) < 10) return;
+
+  const r      = selCanvas.getBoundingClientRect();
+  const scaleX = loadedImg.width  / r.width;
+  const scaleY = loadedImg.height / r.height;
+  let ex = selStartX + selRectW, ey = selStartY + selRectH;
+
+  document.getElementById('box_x1').value = Math.round(Math.min(selStartX, ex) * scaleX);
+  document.getElementById('box_y1').value = Math.round(Math.min(selStartY, ey) * scaleY);
+  document.getElementById('box_x2').value = Math.round(Math.max(selStartX, ex) * scaleX);
+  document.getElementById('box_y2').value = Math.round(Math.max(selStartY, ey) * scaleY);
+
+  toothBoxReady = true;
+  submitBtn.disabled = false;
+});
+
+document.getElementById('main-form').addEventListener('submit', function(e) {
+  if (!document.getElementById('box_x1').value) {
+    e.preventDefault(); alert('Lütfen dişi kare içine alın!'); return;
+  }
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin .8s linear infinite">
+      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4 M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+    </svg> Analiz ediliyor...`;
+});
+</script>
+{% endblock %}

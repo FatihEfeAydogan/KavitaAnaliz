@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Öğrenci Listesi{% endblock %}
+
+{% block content %}
+<style>
+    /* Inputlar pasifken tablo hücresi gibi görünsün */
+    .editable-input {
+        background-color: transparent;
+        border: 1px solid transparent;
+        color: inherit; /* Rengi bulunduğu yerden miras alır (artık beyaz değil) */
+        width: 100%;
+        padding: 5px;
+    }
+    
+    /* Inputlar aktifken (enabled) artık varsayılan 
+       tarayıcı/bootstrap stilini kullanacak */
+</style>
+
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">Kayıtlı Öğrenciler</h2>
+
+    {% if students %}
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Ad</th>
+                    <th>Soyad</th>
+                    <th>Numara</th>
+                    <th>STL Yolu</th>
+                    <th style="width: 250px;">İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr id="row-{{ s.studentID }}">
+                    <td>{{ s.studentID }}</td>
+                    
+                    <td>
+                        <input type="text" class="editable-input" id="ad-{{ s.studentID }}" value="{{ s.studentName }}" disabled>
+                    </td>
+                    <td>
+                        <input type="text" class="editable-input" id="soyad-{{ s.studentID }}" value="{{ s.studentLastname }}" disabled>
+                    </td>
+                    <td>
+                        <input type="text" class="editable-input" id="numara-{{ s.studentID }}" value="{{ s.studentNo }}" disabled>
+                    </td>
+                    
+                    <td class="text-muted small">{{ s.stlFile }}</td>
+                    
+                    <td>
+                        <a href="/result/{{ s.studentID }}" class="btn btn-primary btn-sm">Sonuçları Gör</a>
+
+                        <button class="btn btn-warning btn-sm ms-1" onclick="toggleEdit('{{ s.studentID }}')" id="btn-edit-{{ s.studentID }}">
+                            Düzenle
+                        </button>
+                        <button class="btn btn-success btn-sm ms-1 d-none" onclick="saveStudent('{{ s.studentID }}')" id="btn-save-{{ s.studentID }}">
+                            Kaydet
+                        </button>
+
+                        <button class="btn btn-danger btn-sm ms-1" onclick="deleteStudent('{{ s.studentID }}')">
+                            Sil
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="alert alert-warning text-center">
+        Kayıtlı öğrenci bulunamadı.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Düzenleme Modunu Aç/Kapat
+    function toggleEdit(id) {
+        const adInput = document.getElementById(`ad-${id}`);
+        const soyadInput = document.getElementById(`soyad-${id}`);
+        const numaraInput = document.getElementById(`numara-${id}`);
+        
+        const editBtn = document.getElementById(`btn-edit-${id}`);
+        const saveBtn = document.getElementById(`btn-save-${id}`);
+
+        // Inputların durumunu tersine çevir
+        const isDisabled = adInput.disabled;
+        adInput.disabled = !isDisabled;
+        soyadInput.disabled = !isDisabled;
+        numaraInput.disabled = !isDisabled;
+
+        if (isDisabled) {
+            // Düzenleme modu açıldı
+            editBtn.classList.add('d-none');
+            saveBtn.classList.remove('d-none');
+            adInput.focus();
+        } else {
+            // İptal veya Kayıt sonrası mod kapandı
+            editBtn.classList.remove('d-none');
+            saveBtn.classList.add('d-none');
+        }
+    }
+
+    // Veriyi Python'a Gönder (Update)
+    function saveStudent(id) {
+        const data = {
+            ad: document.getElementById(`ad-${id}`).value,
+            soyad: document.getElementById(`soyad-${id}`).value,
+            numara: document.getElementById(`numara-${id}`).value
+        };
+
+        fetch(`/update_student/${id}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Bilgiler güncellendi!');
+                toggleEdit(id); // Inputları tekrar kilitle
+            } else {
+                alert('Hata: ' + data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert('Sunucu ile iletişim hatası.');
+        });
+    }
+
+    // Öğrenciyi Sil (Delete)
+    function deleteStudent(id) {
+        if (!confirm("Bu öğrenciyi ve tüm analiz sonuçlarını silmek istediğinize emin misiniz?")) return;
+
+        fetch(`/delete_student/${id}`, {
+            method: 'POST',
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Satırı tablodan görsel olarak kaldır
+                const row = document.getElementById(`row-${id}`);
+                row.style.transition = "all 0.5s";
+                row.style.opacity = "0"; // Efektli silinme
+                setTimeout(() => row.remove(), 500);
+            } else {
+                alert('Silme başarısız: ' + data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+            alert('Sunucu hatası.');
+        });
+    }
+</script>
+{% endblock %}

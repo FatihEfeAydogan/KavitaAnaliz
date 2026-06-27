@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Diş Modeli & İzolasyon{% endblock %}
+
+{% block head %}
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
+<style>
+    /* Ortak Yükleme Alanı Stilleri */
+    .upload-area { 
+        border: 2px dashed #cbd5e0; 
+        border-radius: 12px; 
+        cursor: pointer; 
+        transition: all 0.3s ease; 
+        background: #f8fafc; 
+    }
+    .upload-area:hover, .upload-area.dragover { 
+        border-color: #0d6efd; 
+        background: #ebf8ff; 
+    }
+    
+    /* Sekme 1: Fotogrametri Görüntüleyici */
+    model-viewer { 
+        width: 100%; 
+        height: 450px; 
+        background-color: #edf2f7; 
+        border-radius: 12px; 
+        outline: none; 
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Sekme 2: Çok Adımlı İşlem İçin Tam Ekran Yükleme */
+    .loading-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255,255,255,0.95); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
+    }
+    .loading-text {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #0d6efd;
+        margin-top: 15px;
+        text-align: center;
+    }
+    .loading-subtext {
+        font-size: 0.95rem;
+        color: #6c757d;
+        margin-top: 8px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="spinner-border text-primary" style="width: 4rem; height: 4rem;" role="status"></div>
+    <div class="loading-text" id="loadingText">İşlem yapılıyor, lütfen bekleyin...</div>
+    <div class="loading-subtext" id="loadingSubtext">Bu işlem modelin boyutuna göre birkaç dakika sürebilir. Lütfen sekmeyi kapatmayın.</div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-7">
+        <div class="card shadow-sm border-0 p-4 rounded-4 mt-3">
+            
+            <ul class="nav nav-pills nav-justified mb-4 border-bottom pb-3" id="mainTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold fs-5" id="create-tab" data-bs-toggle="pill" data-bs-target="#create-pane" type="button" role="tab">
+                        <i class="bi bi-camera me-2"></i>Model Oluştur
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold fs-5" id="analyze-tab" data-bs-toggle="pill" data-bs-target="#analyze-pane" type="button" role="tab">
+                        <i class="bi bi-scissors me-2"></i>Modeli İzole Et (Masayı Sil)
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="mainTabsContent">
+                
+                <div class="tab-pane fade show active" id="create-pane" role="tabpanel">
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold text-secondary">Fotoğraflardan 3D Model Üretimi</h4>
+                        <p class="text-muted">Dişin farklı açılardan çekilmiş fotoğraflarını yükleyin.</p>
+                    </div>
+
+                    <form id="photoForm">
+                        <label class="upload-area d-flex flex-column align-items-center p-5 mb-4" id="photo-drop-zone">
+                            <input type="file" id="photo-input" name="photos" accept="image/*" multiple required class="d-none">
+                            <i class="bi bi-images text-primary mb-2" style="font-size: 3rem;"></i>
+                            <div class="fw-bold text-primary fs-5" id="photo-file-count">Fotoğrafları Seçin veya Sürükleyin</div>
+                            <div class="text-muted small mt-2">Minimum 20 adet net odaklanmış fotoğraf önerilir.</div>
+                        </label>
+                        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 fs-5" id="photo-submit-btn" disabled>
+                            <i class="bi bi-cloud-upload me-2"></i>Bulutta Model Üretimini Başlat
+                        </button>
+                    </form>
+
+                    <div id="photo-status-container" class="mt-4 p-4 bg-light rounded-3 border" style="display: none;">
+                        <div class="d-flex justify-content-center align-items-center mb-3 gap-3">
+                            <div class="spinner-border text-primary" role="status" id="photo-spinner"></div>
+                            <h5 class="m-0 fw-bold text-dark" id="photo-status-text">Fotoğraflar Paketleniyor...</h5>
+                        </div>
+                        <div class="progress mb-2" style="height: 12px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="photo-progress-bar" style="width: 0%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small fw-bold">
+                            <span id="photo-time-elapsed">Geçen Süre: 00:00</span>
+                            <span class="text-warning">Tahmini Süre: ~3-5 Dakika</span>
+                        </div>
+                    </div>
+
+                    <model-viewer id="photo-viewer-3d" camera-controls auto-rotate shadow-intensity="1" class="mt-4" style="display: none;"></model-viewer>
+                </div>
+
+                <div class="tab-pane fade" id="analyze-pane" role="tabpanel">
+                    <div class="text-center mb-4">
+                        <h4 class="fw-bold text-secondary">OBJ/STL Dosyası İle Otomatik İzolasyon</h4>
+                        <p class="text-muted">Öğrenci bilgilerini girin ve modeli yükleyin. OBJ formatındaki fotogrametri modelinin masasını silerek temiz bir STL dosyası oluşturur.</p>
+                    </div>
+
+                    <form id="analyzeForm" action="/upload_model" method="POST" enctype="multipart/form-data">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="student_name" name="student_name" placeholder="Ad" required>
+                                    <label for="student_name">Öğrenci Adı</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control" id="student_lastname" name="student_lastname" placeholder="Soyad" required>
+                                    <label for="student_lastname">Öğrenci Soyadı</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-floating mb-4">
+                            <input type="text" class="form-control" id="student_no" name="student_no" placeholder="Numara" required>
+                            <label for="student_no">Öğrenci Numarası</label>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold text-secondary ms-1">Model Dosyası Seç (.stl veya .obj)</label>
+                            <input type="file" class="form-control form-control-lg" name="model_file" accept=".stl,.obj" required>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100 py-3 fs-5 fw-bold rounded-3">
+                            <i class="bi bi-gear-wide-connected me-2"></i>Dosyayı Yükle ve İzolasyonu Başlat
+                        </button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // JS MANTIĞI: SEKME 1 (MODEL OLUŞTURMA - FOTOGRAMETRİ)
+    // ==========================================
+    const photoInput = document.getElementById('photo-input');
+    const photoCount = document.getElementById('photo-file-count');
+    const photoSubmitBtn = document.getElementById('photo-submit-btn');
+    const photoForm = document.getElementById('photoForm');
+    const photoDropZone = document.getElementById('photo-drop-zone');
+    
+    const photoStatusContainer = document.getElementById('photo-status-container');
+    const photoStatusText = document.getElementById('photo-status-text');
+    const photoProgressBar = document.getElementById('photo-progress-bar');
+    const photoTimeElapsed = document.getElementById('photo-time-elapsed');
+    const photoSpinner = document.getElementById('photo-spinner');
+    const photoViewer3d = document.getElementById('photo-viewer-3d');
+
+    let timerInterval;
+    let secondsPassed = 0;
+
+    ['dragover', 'dragleave', 'drop'].forEach(evt => photoDropZone.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); }));
+    photoDropZone.addEventListener('dragover', () => photoDropZone.classList.add('dragover'));
+    photoDropZone.addEventListener('dragleave', () => photoDropZone.classList.remove('dragover'));
+    photoDropZone.addEventListener('drop', e => {
+        photoDropZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) {
+            photoInput.files = e.dataTransfer.files;
+            updatePhotoCount();
+        }
+    });
+
+    photoInput.addEventListener('change', updatePhotoCount);
+
+    function updatePhotoCount() {
+        if (photoInput.files.length > 0) {
+            photoCount.innerHTML = `<span class="text-success"><i class="bi bi-check-circle me-1"></i>${photoInput.files.length} fotoğraf seçildi</span>`;
+            photoSubmitBtn.disabled = false;
+        } else {
+            photoCount.innerHTML = "Fotoğrafları Seçin veya Sürükleyin";
+            photoSubmitBtn.disabled = true;
+        }
+    }
+
+    photoForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        photoSubmitBtn.style.display = 'none';
+        photoDropZone.style.display = 'none';
+        photoStatusContainer.style.display = 'block';
+        photoViewer3d.style.display = 'none';
+        
+        secondsPassed = 0;
+        timerInterval = setInterval(() => {
+            secondsPassed++;
+            let m = Math.floor(secondsPassed / 60).toString().padStart(2, '0');
+            let s = (secondsPassed % 60).toString().padStart(2, '0');
+            photoTimeElapsed.innerText = `Geçen Süre: ${m}:${s}`;
+        }, 1000);
+
+        const formData = new FormData(photoForm);
+
+        try {
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            const data = await response.json();
+            
+            if (data.task_id) {
+                photoStatusText.innerText = "Bulutta İşleniyor (0%)";
+                checkNodeOdmStatus(data.task_id);
+            } else {
+                clearInterval(timerInterval);
+                alert("Hata: " + data.error);
+                location.reload();
+            }
+        } catch (error) {
+            clearInterval(timerInterval);
+            alert("Sunucuya bağlanılamadı!");
+            location.reload();
+        }
+    });
+
+    function checkNodeOdmStatus(taskId) {
+        const pollInterval = setInterval(async () => {
+            try {
+                const res = await fetch(`/check_status/${taskId}`);
+                const data = await res.json();
+
+                if (data.status === 'completed') {
+                    clearInterval(pollInterval);
+                    clearInterval(timerInterval);
+                    photoSpinner.style.display = 'none';
+                    photoStatusText.innerText = "İşlem Tamamlandı! Model Hazır.";
+                    photoStatusText.classList.replace("text-dark", "text-success");
+                    photoProgressBar.style.width = "100%";
+                    
+                    setTimeout(() => {
+                        photoStatusContainer.style.display = 'none';
+                        photoViewer3d.src = data.model_url;
+                        photoViewer3d.style.display = 'block';
+                    }, 1500);
+                    
+                } else if (data.status === 'error') {
+                    clearInterval(pollInterval);
+                    clearInterval(timerInterval);
+                    photoSpinner.style.display = 'none';
+                    photoStatusText.innerText = `İşlem Başarısız: ${data.error}`;
+                    photoStatusText.classList.replace("text-dark", "text-danger");
+                    photoProgressBar.classList.replace("bg-success", "bg-danger");
+                    photoProgressBar.style.width = "100%";
+                } else {
+                    let prog = data.progress || 0;
+                    photoStatusText.innerText = `Bulutta İşleniyor (${prog}%)`;
+                    photoProgressBar.style.width = `${prog}%`;
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }, 2000);
+    }
+
+    // ==========================================
+    // JS MANTIĞI: SEKME 2 (İzole Etme İşlemi)
+    // ==========================================
+    document.getElementById('analyzeForm').onsubmit = function() {
+        // Geri kalan her şeyi app.py'ye bıraktığımız için fetch ve manuel JSON handling YOK.
+        // Sadece yükleme ekranını açıyoruz ve dosya uzantısına göre bilgi mesajını güncelliyoruz.
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        
+        const fileInput = document.querySelector('input[name="model_file"]');
+        const isObj = fileInput.files.length > 0 && fileInput.files[0].name.toLowerCase().endsWith('.obj');
+        
+        if (isObj) {
+            document.getElementById('loadingText').innerText = "OBJ Tespit Edildi: Masa kırpılıyor ve model izole ediliyor...";
+        } else {
+            document.getElementById('loadingText').innerText = "STL Tespit Edildi: Model yükleniyor...";
+        }
+    };
+</script>
+{% endblock %}

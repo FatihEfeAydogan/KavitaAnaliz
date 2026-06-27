@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Kayıtlı Öğrenciler - Dental Analysis{% endblock %}
+
+{% block content %}
+<style>
+    .editable-input {
+        background-color: transparent;
+        border: 1px solid transparent;
+        color: inherit;
+        width: 100%;
+        padding: 5px;
+        border-radius: 4px;
+    }
+    .editable-input:focus {
+        background-color: #fff;
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        outline: 0;
+    }
+    .table card {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+</style>
+
+<div class="card shadow-sm border-0 p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="m-0 text-secondary fw-bold"><i class="bi bi-people-fill me-2 text-primary"></i>Kayıtlı Öğrenciler</h2>
+        <span class="badge bg-primary fs-6">Toplam: {{ students|length }} Kayıt</span>
+    </div>
+
+    {% if students %}
+    <div class="table-responsive">
+        <table class="table table-hover align-middle table-bordered text-center m-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>Öğrenci ID</th>
+                    <th>Ad</th>
+                    <th>Soyad</th>
+                    <th>Numara</th>
+                    <th>Model Dosya Yolu (STL)</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr id="row-{{ s.studentID }}">
+                    <td class="fw-bold text-muted">{{ s.studentID }}</td>
+                    <td>
+                        <input type="text" class="editable-input text-center" id="ad-{{ s.studentID }}" value="{{ s.studentName }}" disabled>
+                    </td>
+                    <td>
+                        <input type="text" class="editable-input text-center" id="soyad-{{ s.studentID }}" value="{{ s.studentLastname }}" disabled>
+                    </td>
+                    <td>
+                        <input type="text" class="editable-input text-center" id="no-{{ s.studentID }}" value="{{ s.studentNo }}" disabled>
+                    </td>
+                    <td class="text-start text-truncate" style="max-width: 200px;" title="{{ s.stlFile }}">
+                        <small class="text-success">{{ s.stlFile }}</small>
+                    </td>
+                    <td>
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-outline-secondary btn-sm px-3" id="edit-btn-{{ s.studentID }}" onclick="toggleEdit('{{ s.studentID }}')">
+                                <i class="bi bi-pencil-square me-1"></i>Düzenle
+                            </button>
+                            <button class="btn btn-success btn-sm px-3 d-none" id="save-btn-{{ s.studentID }}" onclick="saveStudent('{{ s.studentID }}')">
+                                <i class="bi bi-check-lg me-1"></i>Kaydet
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm px-3" onclick="deleteStudent('{{ s.studentID }}')">
+                                <i class="bi bi-trash3 me-1"></i>Sil
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info text-center m-0 py-4" role="alert">
+        <i class="bi bi-info-circle-fill fs-3 d-block mb-2"></i>
+        Sistemde henüz kayıtlı bir analiz veya öğrenci bulunamadı.
+    </div>
+    {% endif %}
+</div>
+
+<script>
+    // Düzenleme modunu aç/kapat
+    document.addEventListener("DOMContentLoaded", function() {
+        console.log("Öğrenci yönetim paneli hazır.");
+    });
+
+    function toggleEdit(id) {
+        const adInput = document.getElementById(`ad-${id}`);
+        const soyadInput = document.getElementById(`soyad-${id}`);
+        const noInput = document.getElementById(`no-${id}`);
+        const editBtn = document.getElementById(`edit-btn-${id}`);
+        const saveBtn = document.getElementById(`save-btn-${id}`);
+
+        if (adInput.disabled) {
+            adInput.disabled = false;
+            soyadInput.disabled = false;
+            noInput.disabled = false;
+            editBtn.classList.add('d-none');
+            saveBtn.classList.remove('d-none');
+            adInput.focus();
+        } else {
+            adInput.disabled = true;
+            soyadInput.disabled = true;
+            noInput.disabled = true;
+            editBtn.classList.remove('d-none');
+            saveBtn.classList.add('d-none');
+        }
+    }
+
+    // Değişiklikleri Veritabanına Güncelle (Update)
+    function saveStudent(id) {
+        const data = {
+            studentID: id,
+            studentName: document.getElementById(`ad-${id}`).value,
+            studentLastname: document.getElementById(`soyad-${id}`).value,
+            studentNo: document.getElementById(`no-${id}`).value
+        };
+
+        fetch('/update_student', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.success) {
+                alert('Öğrenci bilgileri başarıyla güncellendi!');
+                toggleEdit(id);
+            } else {
+                alert('Hata: ' + res.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Sunucuyla iletişim kurulurken bir hata oluştu.');
+        });
+    }
+
+    // Öğrenciyi ve Analizi Sil (Delete)
+    function deleteStudent(id) {
+        if (!confirm("Bu öğrenciyi ve tüm analiz sonuçlarını kalıcı olarak silmek istediğinize emin misiniz?")) return;
+
+        fetch(`/delete_student/${id}`, { method: 'POST' })
+        .then(response => response.json())
+        .then(res => {
+            if (res.success) {
+                const row = document.getElementById(`row-${id}`);
+                row.style.transition = "all 0.4s ease";
+                row.style.opacity = "0";
+                row.style.transform = "translateX(20px)";
+                setTimeout(() => {
+                    row.remove();
+                    window.location.reload();
+                }, 400);
+            } else {
+                alert('Silme işlemi başarısız: ' + res.message);
+            }
+        });
+    }
+</script>
+{% endblock %}

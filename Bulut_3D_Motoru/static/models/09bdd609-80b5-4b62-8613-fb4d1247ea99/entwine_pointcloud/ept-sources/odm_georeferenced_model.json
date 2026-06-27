@@ -1,0 +1,310 @@
+{
+  "bounds": [
+    668038.6306152344,
+    -198.28240966796875,
+    -10.232390403747559,
+    668388.8171386719,
+    380.7331848144531,
+    41.721214294433594
+  ],
+  "metadata": {
+    "readers.las": {
+      "comp_spatialreference": "PROJCS[\"WGS 84 / UTM zone 34N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",21],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32634\"]]",
+      "compressed": true,
+      "copc": false,
+      "count": 3403845,
+      "creation_doy": 0,
+      "creation_year": 2026,
+      "dataformat_id": 3,
+      "dataoffset": 5565,
+      "filesource_id": 0,
+      "global_encoding": 0,
+      "global_encoding_base64": "AAA=",
+      "gtiff": "Geotiff_Information:\n   Version: 1\n   Key_Revision: 1.0\n   Tagged_Information:\n      End_Of_Tags.\n   Keyed_Information:\n      GTModelTypeGeoKey (Short,1): ModelTypeProjected\n      GTRasterTypeGeoKey (Short,1): RasterPixelIsArea\n      GTCitationGeoKey (Ascii,8): \"unknown\"\n      GeogCitationGeoKey (Ascii,8): \"unknown\"\n      GeogAngularUnitsGeoKey (Short,1): Angular_Degree\n      ProjectedCSTypeGeoKey (Short,1): PCS_WGS84_UTM_zone_34N\n      ProjLinearUnitsGeoKey (Short,1): Linear_Meter\n      End_Of_Keys.\n   End_Of_Geotiff.\n",
+      "header_size": 227,
+      "major_version": 1,
+      "maxx": 668388.8171,
+      "maxy": 380.7331848,
+      "maxz": 41.72121429,
+      "minor_version": 2,
+      "minx": 668038.6306,
+      "miny": -198.2824097,
+      "minz": -10.2323904,
+      "offset_x": 668190,
+      "offset_y": 5,
+      "offset_z": 0,
+      "point_length": 34,
+      "project_id": "00000000-0000-0000-0000-000000000000",
+      "scale_x": 0.001,
+      "scale_y": 0.001,
+      "scale_z": 0.001,
+      "software_id": "PDAL 2.4.3 (Releas)",
+      "spatialreference": "PROJCS[\"WGS 84 / UTM zone 34N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",21],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32634\"]]",
+      "srs": {
+        "compoundwkt": "PROJCS[\"WGS 84 / UTM zone 34N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",21],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32634\"]]",
+        "horizontal": "PROJCS[\"WGS 84 / UTM zone 34N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",21],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32634\"]]",
+        "isgeocentric": false,
+        "isgeographic": false,
+        "prettycompoundwkt": "PROJCS[\"WGS 84 / UTM zone 34N\",\n    GEOGCS[\"WGS 84\",\n        DATUM[\"WGS_1984\",\n            SPHEROID[\"WGS 84\",6378137,298.257223563,\n                AUTHORITY[\"EPSG\",\"7030\"]],\n            AUTHORITY[\"EPSG\",\"6326\"]],\n        PRIMEM[\"Greenwich\",0,\n            AUTHORITY[\"EPSG\",\"8901\"]],\n        UNIT[\"degree\",0.0174532925199433,\n            AUTHORITY[\"EPSG\",\"9122\"]],\n        AUTHORITY[\"EPSG\",\"4326\"]],\n    PROJECTION[\"Transverse_Mercator\"],\n    PARAMETER[\"latitude_of_origin\",0],\n    PARAMETER[\"central_meridian\",21],\n    PARAMETER[\"scale_factor\",0.9996],\n    PARAMETER[\"false_easting\",500000],\n    PARAMETER[\"false_northing\",0],\n    UNIT[\"metre\",1,\n        AUTHORITY[\"EPSG\",\"9001\"]],\n    AXIS[\"Easting\",EAST],\n    AXIS[\"Northing\",NORTH],\n    AUTHORITY[\"EPSG\",\"32634\"]]",
+        "prettywkt": "PROJCS[\"WGS 84 / UTM zone 34N\",\n    GEOGCS[\"WGS 84\",\n        DATUM[\"WGS_1984\",\n            SPHEROID[\"WGS 84\",6378137,298.257223563,\n                AUTHORITY[\"EPSG\",\"7030\"]],\n            AUTHORITY[\"EPSG\",\"6326\"]],\n        PRIMEM[\"Greenwich\",0,\n            AUTHORITY[\"EPSG\",\"8901\"]],\n        UNIT[\"degree\",0.0174532925199433,\n            AUTHORITY[\"EPSG\",\"9122\"]],\n        AUTHORITY[\"EPSG\",\"4326\"]],\n    PROJECTION[\"Transverse_Mercator\"],\n    PARAMETER[\"latitude_of_origin\",0],\n    PARAMETER[\"central_meridian\",21],\n    PARAMETER[\"scale_factor\",0.9996],\n    PARAMETER[\"false_easting\",500000],\n    PARAMETER[\"false_northing\",0],\n    UNIT[\"metre\",1,\n        AUTHORITY[\"EPSG\",\"9001\"]],\n    AXIS[\"Easting\",EAST],\n    AXIS[\"Northing\",NORTH],\n    AUTHORITY[\"EPSG\",\"32634\"]]",
+        "proj4": "+proj=utm +zone=34 +datum=WGS84 +units=m +no_defs",
+        "units": {
+          "horizontal": "metre",
+          "vertical": ""
+        },
+        "vertical": "",
+        "wkt": "PROJCS[\"WGS 84 / UTM zone 34N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",21],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32634\"]]"
+      },
+      "system_id": "PDAL",
+      "vlr_0": {
+        "data": "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",
+        "description": "Ground Control Points (zip)",
+        "record_id": 2,
+        "user_id": "ODM"
+      },
+      "vlr_1": {
+        "data": "AQABAAAABwAABAAAAQABAAEEAAABAAEAAgSxhwgAAAABCLGHCAAIAAYIAAABAI4jAAwAAAEAen8EDAAAAQApIw==",
+        "description": "GeoTiff GeoKeyDirectoryTag",
+        "record_id": 34735,
+        "user_id": "LASF_Projection"
+      },
+      "vlr_2": {
+        "data": "dW5rbm93bnx1bmtub3dufAA=",
+        "description": "GeoTiff GeoAsciiParamsTag",
+        "record_id": 34737,
+        "user_id": "LASF_Projection"
+      },
+      "vlr_3": {
+        "data": "AgAAAAMEAwAAAAAAUMMAAP////////////////////8DAAYAFAACAAcACAACAAgABgACAA==",
+        "description": "http://laszip.org",
+        "record_id": 22204,
+        "user_id": "laszip encoded"
+      },
+      "vlr_4": {
+        "data": "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",
+        "description": "Ground Control Points (zip)",
+        "record_id": 2,
+        "user_id": "ODM"
+      },
+      "vlr_5": {
+        "data": "AQABAAAABwAABAAAAQABAAEEAAABAAEAAgSxhwgAAAABCLGHCAAIAAYIAAABAI4jAAwAAAEAen8EDAAAAQApIw==",
+        "description": "GeoTiff GeoKeyDirectoryTag",
+        "record_id": 34735,
+        "user_id": "LASF_Projection"
+      },
+      "vlr_6": {
+        "data": "dW5rbm93bnx1bmtub3dufAA=",
+        "description": "GeoTiff GeoAsciiParamsTag",
+        "record_id": 34737,
+        "user_id": "LASF_Projection"
+      },
+      "vlr_7": {
+        "data": "AgAAAAMEAwAAAAAAUMMAAP////////////////////8DAAYAFAACAAcACAACAAgABgACAA==",
+        "description": "http://laszip.org",
+        "record_id": 22204,
+        "user_id": "laszip encoded"
+      }
+    }
+  },
+  "path": "/var/www/data/09bdd609-80b5-4b62-8613-fb4d1247ea99/odm_georeferencing/odm_georeferenced_model.laz",
+  "pipeline": [
+    {
+      "filename": "/var/www/data/09bdd609-80b5-4b62-8613-fb4d1247ea99/odm_georeferencing/odm_georeferenced_model.laz"
+    }
+  ],
+  "points": 3403845,
+  "schema": [
+    {
+      "count": 3403845,
+      "maximum": 668388.817,
+      "mean": 668198.3159805142,
+      "minimum": 668038.631,
+      "name": "X",
+      "offset": 668190,
+      "scale": 0.001,
+      "size": 4,
+      "stddev": 46.24319669268968,
+      "type": "signed",
+      "variance": 2138.433240358786
+    },
+    {
+      "count": 3403845,
+      "maximum": 380.733,
+      "mean": -7.672736834081435,
+      "minimum": -198.282,
+      "name": "Y",
+      "offset": 5,
+      "scale": 0.001,
+      "size": 4,
+      "stddev": 61.522286710612185,
+      "type": "signed",
+      "variance": 3784.991762102769
+    },
+    {
+      "count": 3403845,
+      "maximum": 41.721000000000004,
+      "mean": 0.22199886070017077,
+      "minimum": -10.232000000000001,
+      "name": "Z",
+      "scale": 0.001,
+      "size": 4,
+      "stddev": 2.6018646049649634,
+      "type": "signed",
+      "variance": 6.769699422569486
+    },
+    {
+      "count": 3403845,
+      "maximum": 0,
+      "mean": 0,
+      "minimum": 0,
+      "name": "Intensity",
+      "size": 2,
+      "stddev": 0,
+      "type": "unsigned",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 1,
+      "mean": 1,
+      "minimum": 1,
+      "name": "ReturnNumber",
+      "size": 1,
+      "stddev": 0,
+      "type": "unsigned",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 1,
+      "mean": 1,
+      "minimum": 1,
+      "name": "NumberOfReturns",
+      "size": 1,
+      "stddev": 0,
+      "type": "unsigned",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 0,
+      "mean": 0,
+      "minimum": 0,
+      "name": "ScanDirectionFlag",
+      "size": 1,
+      "stddev": 0,
+      "type": "unsigned",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 0,
+      "mean": 0,
+      "minimum": 0,
+      "name": "EdgeOfFlightLine",
+      "size": 1,
+      "stddev": 0,
+      "type": "unsigned",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "counts": [
+        {
+          "count": 3403845,
+          "value": 0
+        }
+      ],
+      "maximum": 0,
+      "mean": 0,
+      "minimum": 0,
+      "name": "Classification",
+      "size": 1,
+      "stddev": 0,
+      "type": "unsigned",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 0,
+      "mean": 0,
+      "minimum": 0,
+      "name": "ScanAngleRank",
+      "size": 4,
+      "stddev": 0,
+      "type": "float",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 13,
+      "mean": 4.834485706605184,
+      "minimum": 2,
+      "name": "UserData",
+      "size": 1,
+      "stddev": 3.0425249636808425,
+      "type": "unsigned",
+      "variance": 9.256958154621111
+    },
+    {
+      "count": 3403845,
+      "maximum": 0,
+      "mean": 0,
+      "minimum": 0,
+      "name": "PointSourceId",
+      "size": 2,
+      "stddev": 0,
+      "type": "unsigned",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 0,
+      "mean": 0,
+      "minimum": 0,
+      "name": "GpsTime",
+      "size": 8,
+      "stddev": 0,
+      "type": "float",
+      "variance": 0
+    },
+    {
+      "count": 3403845,
+      "maximum": 230,
+      "mean": 107.12211073066018,
+      "minimum": 10,
+      "name": "Red",
+      "size": 2,
+      "stddev": 28.959813362535073,
+      "type": "unsigned",
+      "variance": 838.6707899928649
+    },
+    {
+      "count": 3403845,
+      "maximum": 235,
+      "mean": 92.55328723840894,
+      "minimum": 8,
+      "name": "Green",
+      "size": 2,
+      "stddev": 31.667424934419618,
+      "type": "unsigned",
+      "variance": 1002.8258019771013
+    },
+    {
+      "count": 3403845,
+      "maximum": 224,
+      "mean": 80.17145815981362,
+      "minimum": 9,
+      "name": "Blue",
+      "size": 2,
+      "stddev": 33.14441663255635,
+      "type": "unsigned",
+      "variance": 1098.5523539124779
+    }
+  ],
+  "srs": {
+    "authority": "EPSG",
+    "horizontal": "32634",
+    "wkt": "PROJCS[\"WGS 84 / UTM zone 34N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",21],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH],AUTHORITY[\"EPSG\",\"32634\"]]"
+  }
+}
